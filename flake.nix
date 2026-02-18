@@ -17,7 +17,7 @@
     cljfmt,
     ...
   } @ inputs: let
-    supportedSystems = ["x86_64-linux" "aarch64-linux"];
+    supportedSystems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
     pkgsBySystem = nixpkgs.lib.getAttrs supportedSystems nixpkgs.legacyPackages;
     forAllPkgs = fn: nixpkgs.lib.mapAttrs (system: pkgs: (fn system pkgs)) pkgsBySystem;
     # treefmt configuration
@@ -95,7 +95,7 @@
                     ];
                   })
                 ]
-                ++ (builtins.attrValues treefmtEval.x86_64-linux.config.build.programs);
+                ++ (builtins.attrValues treefmtEval.${system}.config.build.programs);
 
               languages.clojure.enable = true;
               services.minio = {
@@ -177,28 +177,32 @@
       };
     };
 
-    packages = forAllPkgs (system: pkgs: {
-      deps-lock = clj-nix.packages.${system}.deps-lock;
-      container = pkgs.dockerTools.buildLayeredImage {
-        name = "boostbox";
-        tag = "latest";
-        config = {
-          Entrypoint = ["${self.packages.${system}.default}/bin/boostbox"];
-          ExposedPorts = {
-            "8080" = {};
+    packages = forAllPkgs (system: pkgs:
+      {
+        deps-lock = clj-nix.packages.${system}.deps-lock;
+        default = clj-nix.lib.mkCljApp {
+          inherit pkgs;
+          modules = [
+            {
+              projectSrc = ./.;
+              name = "com.noblepayne/boostbox";
+              main-ns = "boostbox.boostbox";
+            }
+          ];
+        };
+      }
+      // (nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "-linux" system) {
+        container = pkgs.dockerTools.buildLayeredImage {
+          name = "boostbox";
+          tag = "latest";
+          config = {
+            Entrypoint = ["${self.packages.${system}.default}/bin/boostbox"];
+            ExposedPorts = {
+              "8080" = {};
+            };
           };
         };
-      };
-      default = clj-nix.lib.mkCljApp {
-        inherit pkgs;
-        modules = [
-          {
-            projectSrc = ./.;
-            name = "com.noblepayne/boostbox";
-            main-ns = "boostbox.boostbox";
-          }
-        ];
-      };
-    });
+      })
+    );
   };
 }

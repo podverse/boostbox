@@ -2,17 +2,17 @@
   <img src="./images/v4vbox.png" alt="3D box with 'V4V' on one side." width="128">
 </div>
 
-# BoostBox
+# BoostBox (macOS)
 
 A simple, lightweight, and self-hostable API for storing and retrieving [Podcasting 2.0](https://podcasting2.org/) payment metadata.
+
+This is the **macOS version** of the documentation. The main [README.md](README.md) is oriented toward Linux.
 
 Demo: [boostbox.cloud](https://boostbox.cloud)
 
 Demo Boost: [01KB19TNRVE1RVQCXVFWY68PYG](https://boostbox.cloud/boost/01KB19TNRVE1RVQCXVFWY68PYG)
 
 ![Demo GIF (Jeff)](images/demo.gif)
-
-If you're on macOS, see [MACOS-README.md](MACOS-README.md) for Mac-specific instructions.
 
 ---
 
@@ -89,17 +89,20 @@ curl -v "http://boostbox.cloud/boost/01K9R9E2JNE1CR0ME6CFM45T8E"
 <!-- The page body will show a human-readable view of the metadata -->
 ```
 
-## Getting Started
+## Getting Started (macOS)
 
-### Option 1: Run Directly with Nix (No Cloning)
+The flake supports Apple Silicon (aarch64-darwin). On macOS you must use a **local clone**; `nix run github:noblepayne/boostbox` and building the Docker image are Linux-only.
 
-If you have [Nix](https://nixos.org/download.html) installed with flakes support, you can run BoostBox directly without cloning the repository:
+### Option 1: Run with Nix (from a local clone)
+
+Clone the repo, then run BoostBox without a separate build step:
 
 ```sh
-nix run github:noblepayne/boostbox
+git clone https://github.com/noblepayne/boostbox && cd boostbox
+nix run .#default
 ```
 
-This will start the server on `http://localhost:8080` with default settings.
+Or: `nix run .` (same effect). The server starts on `http://localhost:8080` with default settings.
 
 ### Option 2: Docker
 
@@ -128,25 +131,16 @@ docker-compose up
 
 **3. Build from Source (Nix)**
 
-If you prefer to build the container locally using Nix:
-
-```sh
-git clone https://github.com/noblepayne/boostbox && cd boostbox
-nix build .#container && docker load < ./result
-```
-
-Then run using the local tag:
-
-```sh
-docker run -p 8080:8080 --env-file .env --name boostbox boostbox
-```
+Building the container with Nix is **not available on macOS** (Linux-only). To run the app on your Mac, use Option 1 or Option 3 below. To get a container image, build on a Linux machine or in CI: `nix build .#container && docker load < ./result`.
 
 ### Option 3: Build and Run Locally with Nix
 
 1. Clone the repository: `git clone https://github.com/noblepayne/boostbox`
 1. Change into the directory: `cd boostbox`
-1. Build: `nix build`
+1. Build: `nix build .#default`
 1. Run: `./result/bin/boostbox`
+
+Or run without a separate build step: `nix run .#default` (starts the server on `http://localhost:8080` with default settings).
 
 Configure via environment variables (see Configuration section below).
 
@@ -156,10 +150,19 @@ For REPL-oriented development with Calva (VSCode):
 
 1. Clone the repository: `git clone https://github.com/noblepayne/boostbox`
 1. Change into the directory: `cd boostbox`
-1. Enter the development environment: `./dev.sh`
+1. Enter the development environment: `nix develop` or `./dev.sh`
 1. VSCode will launch automatically with Calva pre-configured
 1. Configure via environment variables (see Configuration section below)
 1. Use Calva to connect to the NREPL and start developing
+
+**Quick reference (macOS):**
+
+| Goal           | Command                                              |
+|----------------|------------------------------------------------------|
+| Run the app    | `nix run .#default` or `nix run .`                   |
+| Build then run | `nix build .#default` then `./result/bin/boostbox`  |
+| Development shell | `nix develop` or `./dev.sh`                       |
+| Lock deps      | `nix run .#deps-lock`                                |
 
 To test a local instance with curl and full test data, see [docs/dev/TESTING.md](docs/dev/TESTING.md).
 
