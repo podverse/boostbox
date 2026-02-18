@@ -161,7 +161,7 @@ For REPL-oriented development with Calva (VSCode):
 
 ## Configuration
 
-Configuration is handled via environment variables.
+Configuration is handled via environment variables. See [Default settings](docs/env-vars/DEFAULTS.md) for the values used when running with `nix run` or without setting env vars.
 
 ### Core Configuration
 
