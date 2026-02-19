@@ -3,6 +3,7 @@ boosts
 .clj-kondo
 .cpcache
 .devenv
+.direnv
 .env
 logs.test.txt
 .lsp

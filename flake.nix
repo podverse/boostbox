@@ -20,14 +20,19 @@
     supportedSystems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin"];
     pkgsBySystem = nixpkgs.lib.getAttrs supportedSystems nixpkgs.legacyPackages;
     forAllPkgs = fn: nixpkgs.lib.mapAttrs (system: pkgs: (fn system pkgs)) pkgsBySystem;
-    # treefmt configuration
+    # treefmt configuration (cljfmt-flake has no aarch64-darwin package)
+    cljfmtSupported = system: nixpkgs.lib.elem system ["x86_64-linux" "aarch64-linux"];
     treefmtEval = forAllPkgs (
       system: pkgs:
         treefmt-nix.lib.evalModule pkgs {
           projectRootFile = "flake.nix";
           programs.alejandra.enable = true;
-          programs.cljfmt.enable = true;
-          programs.cljfmt.package = cljfmt.packages.${system}.default;
+          programs.cljfmt = (if cljfmtSupported system then {
+            enable = true;
+            package = cljfmt.packages.${system}.default;
+          } else {
+            enable = false;
+          });
           programs.prettier.enable = true;
           programs.mdformat.enable = true;
         }
@@ -114,8 +119,10 @@
 
               scripts.format.exec = ''
                 nix fmt .
-                cljfmt fix src
-                cljfmt fix deps.edn
+                if command -v cljfmt >/dev/null 2>&1; then
+                  cljfmt fix src
+                  cljfmt fix deps.edn
+                fi
               '';
               scripts.lock.exec = ''
                 nix flake lock
@@ -149,16 +156,13 @@
               '';
 
               enterShell = ''
-                # start editor
                 echo    "===================================================="
                 echo "Type \`scripts\` for help and a list of available scripts."
                 echo -n "Available scripts: "
                 scripts
                 echo    "===================================================="
                 echo
-                echo "Starting editor and user shell..."
                 export SHELL=$OLDSHELL
-                code . &>/dev/null
               '';
             }
           )
